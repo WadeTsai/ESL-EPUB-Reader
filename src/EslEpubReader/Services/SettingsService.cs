@@ -66,6 +66,25 @@ public sealed class ReaderSettings
     /// launches; unknown codes fall back to the default at load time
     /// (see LanguageCatalog.FromCode).</summary>
     public string TargetLanguageCode { get; set; } = LanguageCatalog.DefaultCode;
+
+    // ----- remembered typography (the toolbar reading controls) -------------
+    // Stored as the SAME values the UI uses (the ComboBoxItem Tag strings and
+    // the zoom factor), so restoring is a simple "re-select the matching
+    // item" — no separate mapping table to keep in sync with the XAML.
+
+    /// <summary>CSS font-family override for the chapter text (a Tag value
+    /// from the toolbar font ComboBox, e.g. "'Segoe UI', sans-serif").
+    /// "" = the default: keep the book's own fonts.</summary>
+    public string ReaderFontFamily { get; set; } = "";
+
+    /// <summary>CSS line-height override (a Tag value from the line-spacing
+    /// ComboBox, e.g. "1.6"). "" = the book's default spacing.</summary>
+    public string ReaderLineHeight { get; set; } = "";
+
+    /// <summary>Text zoom factor (the toolbar +/- buttons), 1.0 = 100%.
+    /// Clamped to the UI's 0.5–3.0 range at load time in case the file was
+    /// hand-edited to something silly.</summary>
+    public double ReaderZoom { get; set; } = 1.0;
 }
 
 /// <summary>Loads and saves ReaderSettings. All failures are swallowed by

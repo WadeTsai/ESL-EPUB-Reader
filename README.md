@@ -93,8 +93,9 @@ doesn't know the phrase, each word is decoded individually.
   list and the dictionary panel for distraction-free, full-width reading;
   a re-shown panel comes back at exactly the width it had.
 - **Continue where you left off** — the app remembers the last opened book,
-  chapter, and scroll position (saved to
-  `%LOCALAPPDATA%\EslEpubReader\settings.json`) and restores all three
+  chapter, and scroll position, plus the **font family, text size, line
+  spacing, theme, and translation language** you chose (saved to
+  `%LOCALAPPDATA%\EslEpubReader\settings.json`) and restores everything
   automatically at the next launch. The position is stored as a scroll
   *fraction* of the chapter, so it still lands on the right paragraph after
   changing zoom, font, or window size.

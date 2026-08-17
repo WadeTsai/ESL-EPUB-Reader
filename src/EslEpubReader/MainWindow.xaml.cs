@@ -138,6 +138,16 @@ public sealed partial class MainWindow : Window
     /// continuous vertically-scrolling page.</summary>
     private bool _dualPage;
 
+    /// <summary>
+    /// Guards settings WRITES during construction. The typography ComboBoxes
+    /// raise SelectionChanged while XAML is still parsing (SelectedIndex="0")
+    /// and again while the constructor re-selects the remembered items —
+    /// both BEFORE/DURING restore. Saving at those moments would overwrite
+    /// the settings file with defaults. Set to true at the end of the
+    /// constructor, after every stored value has been re-applied.
+    /// </summary>
+    private bool _settingsRestored;
+
     /// <summary>True once the CoreWebView2 runtime finished initializing.</summary>
     private bool _webViewReady;
 
@@ -211,6 +221,18 @@ public sealed partial class MainWindow : Window
         LanguageCombo.ItemsSource = LanguageCatalog.All;
         LanguageCombo.SelectedItem = LanguageCatalog.FromCode(_settings.Current.TargetLanguageCode);
 
+        // Restore the remembered typography. The ComboBox re-selections fire
+        // ReaderStyleCombo_SelectionChanged, which re-applies the CSS values —
+        // the same code path as a live user change (but no premature save:
+        // _settingsRestored is still false here).
+        _zoom = Math.Clamp(_settings.Current.ReaderZoom, 0.5, 3.0);
+        SelectComboItemByTag(FontFamilyCombo, _settings.Current.ReaderFontFamily);
+        SelectComboItemByTag(LineSpacingCombo, _settings.Current.ReaderLineHeight);
+        _ = ApplyReaderStyleAsync();   // refresh the zoom label with the restored value
+
+        // From here on, control changes are USER changes — persist them.
+        _settingsRestored = true;
+
         // On close: persist the final reading position, free the temp
         // extraction folder, and release the native audio resources
         // (MediaPlayer/SpeechSynthesizer hold OS handles).
@@ -237,6 +259,25 @@ public sealed partial class MainWindow : Window
     {
         await InitializeWebViewAsync();     // must be ready before a book opens
         await ReopenLastBookAsync();        // "continue where you left off"
+    }
+
+    /// <summary>
+    /// Select the ComboBoxItem whose Tag equals the given value — the
+    /// reverse of what ReaderStyleCombo_SelectionChanged reads. Used to
+    /// restore the remembered font/spacing at startup. An unknown tag (e.g.
+    /// a hand-edited settings file) leaves the current selection (the XAML
+    /// default, index 0) untouched.
+    /// </summary>
+    private static void SelectComboItemByTag(ComboBox combo, string tag)
+    {
+        for (int i = 0; i < combo.Items.Count; i++)
+        {
+            if (combo.Items[i] is ComboBoxItem item && (item.Tag as string ?? "") == tag)
+            {
+                combo.SelectedIndex = i;
+                return;
+            }
+        }
     }
 
     // ================================================= session persistence
@@ -1090,6 +1131,7 @@ public sealed partial class MainWindow : Window
     private void ZoomInButton_Click(object sender, RoutedEventArgs e)
     {
         _zoom = Math.Min(3.0, _zoom + 0.1);
+        SaveZoomSetting();
         _ = ApplyReaderStyleAsync();
     }
 
@@ -1097,7 +1139,18 @@ public sealed partial class MainWindow : Window
     private void ZoomOutButton_Click(object sender, RoutedEventArgs e)
     {
         _zoom = Math.Max(0.5, _zoom - 0.1);
+        SaveZoomSetting();
         _ = ApplyReaderStyleAsync();
+    }
+
+    /// <summary>Persist the text-zoom factor (user clicks only — the +/-
+    /// buttons cannot fire during construction, but the guard keeps all
+    /// typography saves consistent).</summary>
+    private void SaveZoomSetting()
+    {
+        if (!_settingsRestored) return;
+        _settings.Current.ReaderZoom = _zoom;
+        _settings.Save();
     }
 
     /// <summary>
@@ -1128,6 +1181,15 @@ public sealed partial class MainWindow : Window
         // simply does nothing, and ApplyReaderStyleAsync is a no-op then too.)
         if (ReferenceEquals(combo, FontFamilyCombo)) _fontFamily = cssValue;
         else if (ReferenceEquals(combo, LineSpacingCombo)) _lineHeight = cssValue;
+
+        // Persist the choice — but only for USER changes, never for the
+        // parse-time/restore-time events (see _settingsRestored).
+        if (_settingsRestored)
+        {
+            _settings.Current.ReaderFontFamily = _fontFamily;
+            _settings.Current.ReaderLineHeight = _lineHeight;
+            _settings.Save();
+        }
 
         _ = ApplyReaderStyleAsync();
     }
