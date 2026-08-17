@@ -752,6 +752,52 @@ public sealed partial class MainWindow : Window
                     e.preventDefault();
                 }
             }, { passive: false });
+
+            // ---------- 4. keyboard paging in dual-page mode ----------
+            // PageDown/PageUp (plus Space, plain arrows, Home/End) normally
+            // scroll VERTICALLY — which dual-page mode locks, so the keys
+            // appeared dead. Map them to horizontal page flips instead.
+            //
+            // One "page" (a two-column pair) advances the scroll by the
+            // column period: content width (client width minus the body's
+            // own padding) plus one column gap — that is exactly where the
+            // next column pair starts in a CSS multicol overflow layout.
+            function dualPageStep() {
+                const cs = getComputedStyle(document.body);
+                return document.body.clientWidth
+                     - (parseFloat(cs.paddingLeft)  || 0)
+                     - (parseFloat(cs.paddingRight) || 0)
+                     + (parseFloat(cs.columnGap)    || 0);
+            }
+
+            window.addEventListener("keydown", (e) => {
+                const body = document.body;
+                // Single-page mode: leave every key to its default behavior.
+                if (!body || body.scrollWidth <= body.clientWidth + 1) return;
+                // Never hijack keys that are part of a keyboard shortcut,
+                // or Shift+arrows (used to extend the text selection).
+                if (e.ctrlKey || e.altKey || e.metaKey) return;
+
+                if (e.key === "Home") { body.scrollLeft = 0; e.preventDefault(); return; }
+                if (e.key === "End")  { body.scrollLeft = body.scrollWidth; e.preventDefault(); return; }
+
+                let direction = 0;
+                if (e.key === "PageDown" || e.key === "ArrowRight" ||
+                    (e.key === " " && !e.shiftKey)) direction = 1;       // next page
+                else if (e.key === "PageUp" || e.key === "ArrowLeft" ||
+                    (e.key === " " && e.shiftKey)) direction = -1;       // previous page
+                if (direction === 0 || (e.shiftKey && e.key !== " ")) return;
+
+                // Snap to whole pages: round the CURRENT position to the
+                // nearest page first (the wheel scrolls continuously, so we
+                // may be mid-page), then step — a flip never shows half a
+                // column.
+                const step = dualPageStep();
+                const target = Math.round(body.scrollLeft / step) * step + direction * step;
+                body.scrollLeft = Math.max(0,
+                    Math.min(target, body.scrollWidth - body.clientWidth));
+                e.preventDefault();
+            }, { capture: true });
         })();
         """;
 
