@@ -86,11 +86,13 @@
 
                 <!-- Chapter navigation: enabled only while a book is open. -->
                 <Button x:Name="PrevChapterButton" Click="PrevChapterButton_Click"
-                        IsEnabled="False" ToolTipService.ToolTip="Previous chapter">
+                        IsEnabled="False" AutomationProperties.Name="Previous chapter"
+                        ToolTipService.ToolTip="Previous chapter">
                     <FontIcon Glyph="&#xE76B;" FontSize="14"/>      <!-- chevron left -->
                 </Button>
                 <Button x:Name="NextChapterButton" Click="NextChapterButton_Click"
-                        IsEnabled="False" ToolTipService.ToolTip="Next chapter">
+                        IsEnabled="False" AutomationProperties.Name="Next chapter"
+                        ToolTipService.ToolTip="Next chapter">
                     <FontIcon Glyph="&#xE76C;" FontSize="14"/>      <!-- chevron right -->
                 </Button>
 
@@ -99,12 +101,14 @@
                 <!-- Text size: important accessibility feature for ESL readers
                      who often prefer larger type while decoding new words. -->
                 <Button x:Name="ZoomOutButton" Click="ZoomOutButton_Click"
+                        AutomationProperties.Name="Smaller text"
                         ToolTipService.ToolTip="Smaller text">
                     <FontIcon Glyph="&#xE738;" FontSize="14"/>      <!-- minus -->
                 </Button>
                 <TextBlock x:Name="ZoomLabel" Text="100%" VerticalAlignment="Center"
                            MinWidth="44" TextAlignment="Center"/>
                 <Button x:Name="ZoomInButton" Click="ZoomInButton_Click"
+                        AutomationProperties.Name="Larger text"
                         ToolTipService.ToolTip="Larger text">
                     <FontIcon Glyph="&#xE710;" FontSize="14"/>      <!-- plus -->
                 </Button>
@@ -174,6 +178,7 @@
                 <ToggleButton x:Name="DualPageToggle"
                               Checked="DualPageToggle_Toggled"
                               Unchecked="DualPageToggle_Toggled"
+                              AutomationProperties.Name="Dual-page view"
                               ToolTipService.ToolTip="Dual-page view (like an open book)">
                     <StackPanel Orientation="Horizontal" Spacing="6">
                         <FontIcon Glyph="&#xE736;" FontSize="14"/>
@@ -239,6 +244,7 @@
                      (avoids composing glyph strings in C#). -->
                 <Button x:Name="ThemeToggleButton"
                         Click="ThemeToggleButton_Click"
+                        AutomationProperties.Name="Switch between day and night theme"
                         ToolTipService.ToolTip="Switch between day and night theme">
                     <Grid>
                         <FontIcon x:Name="MoonIcon" Glyph="&#xE708;" FontSize="14"/>  <!-- "QuietHours" moon -->
@@ -371,6 +377,7 @@
                                     Click="SpeakTermButton_Click"
                                     IsEnabled="False" VerticalAlignment="Top"
                                     Padding="8,6"
+                                    AutomationProperties.Name="Read this text aloud"
                                     ToolTipService.ToolTip="Read this text aloud">
                                 <FontIcon Glyph="&#xE767;" FontSize="14"/>  <!-- speaker -->
                             </Button>
