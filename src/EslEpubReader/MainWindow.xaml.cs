@@ -1235,6 +1235,48 @@ public sealed partial class MainWindow : Window
         if (_lineHeight.Length > 0)
             css.Append($"body, body * {{ line-height: {_lineHeight} !important; }}\n");
 
+        // BOOK-PAGE LAYOUT (single-page mode): make the chapter read like a
+        // real book page instead of a raw web document. Most ePubs ship NO
+        // page geometry at all — publishers (e.g. Standard Ebooks) assume
+        // the READING SYSTEM supplies the page frame, the way Kindle/Kobo
+        // do. Without this block, text runs edge-to-edge across the whole
+        // window at eye-watering line lengths.
+        //
+        //   * max-width 40em  — the classic comfortable book measure
+        //     (~65-75 characters per line); em-based, so it scales with the
+        //     user's zoom and font choices;
+        //   * margin auto     — centers the text column like a printed page;
+        //   * generous padding — the page's inner margins;
+        //   * heading-margin caps — some publishers use huge decorative
+        //     gaps (this is where a 10rem hole under a chapter title comes
+        //     from); 2em/1.5em keeps titles bookish without the void.
+        //     hgroup children stay tight so grouped title+subtitle lines
+        //     read as one block;
+        //   * responsive images — a full-page illustration must shrink to
+        //     the column, never force a horizontal scrollbar.
+        //
+        // Dual-page mode skips this frame: its viewport-height columns ARE
+        // the page geometry there, and a max-width would fight them.
+        if (!_dualPage)
+        {
+            css.Append(
+                """
+                body {
+                    max-width: 40em !important;
+                    margin: 0 auto !important;
+                    padding: 3em 2.5em 6em 2.5em !important;
+                    box-sizing: border-box !important;
+                }
+                h1, h2, h3, h4, h5, h6, hgroup, header {
+                    margin-top: 2em !important;
+                    margin-bottom: 1.5em !important;
+                }
+                hgroup > * { margin-top: 0 !important; margin-bottom: 0 !important; }
+                img, svg { max-width: 100%; height: auto; }
+                """);
+            css.Append('\n');
+        }
+
         // DUAL-PAGE MODE: lay the chapter out as an open book. CSS
         // multi-columns pinned to the viewport height do the pagination:
         //
