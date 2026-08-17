@@ -85,6 +85,11 @@ public sealed class ReaderSettings
     /// Clamped to the UI's 0.5–3.0 range at load time in case the file was
     /// hand-edited to something silly.</summary>
     public double ReaderZoom { get; set; } = 1.0;
+
+    /// <summary>Page side margin in em — left and right are always equal
+    /// (a Tag value from the Margins ComboBox, e.g. "5"). "" = the built-in
+    /// default (2.5em).</summary>
+    public string ReaderPageMargin { get; set; } = "";
 }
 
 /// <summary>Loads and saves ReaderSettings. All failures are swallowed by

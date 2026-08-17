@@ -69,6 +69,9 @@ doesn't know the phrase, each word is decoded individually.
   book's default.
 - **Line spacing control** (1.4× – 2.5×) for easier line tracking while
   decoding unfamiliar words.
+- **Page margin control** — narrow / default / wide / extra-wide side
+  margins (left and right always equal, like a book page); wider margins
+  also shorten the line length.
 - **Single / dual-page view** — a toolbar toggle switches between one
   continuous scrolling page and an open-book layout with two side-by-side
   page columns; in dual-page mode the mouse wheel flips pages horizontally,

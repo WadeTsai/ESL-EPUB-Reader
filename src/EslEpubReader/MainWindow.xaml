@@ -144,6 +144,22 @@
                     <ComboBoxItem Content="Spacing 2.5" Tag="2.5"/>
                 </ComboBox>
 
+                <!-- Page side MARGINS (left and right are always kept equal,
+                     like a book page). The Tag is the per-side margin in em;
+                     empty Tag = the built-in default (2.5em). Because the
+                     page column is border-box sized, wider margins also
+                     narrow the text column — shorter lines, easier tracking.
+                     Applied in ApplyReaderStyleAsync; persisted like the
+                     other typography settings. -->
+                <ComboBox x:Name="MarginCombo" MinWidth="150" SelectedIndex="0"
+                          SelectionChanged="ReaderStyleCombo_SelectionChanged"
+                          ToolTipService.ToolTip="Page margins (left = right)">
+                    <ComboBoxItem Content="Default margins" Tag=""/>
+                    <ComboBoxItem Content="Narrow margins" Tag="1"/>
+                    <ComboBoxItem Content="Wide margins" Tag="5"/>
+                    <ComboBoxItem Content="Extra-wide margins" Tag="8"/>
+                </ComboBox>
+
                 <!-- Single-page / dual-page layout switch. OFF (default) =
                      one continuous vertically-scrolling page; ON = the
                      chapter is laid out as side-by-side page columns that

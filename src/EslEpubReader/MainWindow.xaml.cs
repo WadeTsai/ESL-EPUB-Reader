@@ -133,6 +133,11 @@ public sealed partial class MainWindow : Window
     /// ComboBox. Empty string = keep the book's default spacing.</summary>
     private string _lineHeight = "";
 
+    /// <summary>Page side margin in em (LEFT and RIGHT are always equal,
+    /// like a book page), taken from the toolbar ComboBox. Empty string =
+    /// the built-in default (2.5em).</summary>
+    private string _pageMargin = "";
+
     /// <summary>True = dual-page layout (side-by-side columns that flip
     /// horizontally, like an open book); false = the default single
     /// continuous vertically-scrolling page.</summary>
@@ -239,6 +244,7 @@ public sealed partial class MainWindow : Window
         _zoom = Math.Clamp(_settings.Current.ReaderZoom, 0.5, 3.0);
         SelectComboItemByTag(FontFamilyCombo, _settings.Current.ReaderFontFamily);
         SelectComboItemByTag(LineSpacingCombo, _settings.Current.ReaderLineHeight);
+        SelectComboItemByTag(MarginCombo, _settings.Current.ReaderPageMargin);
         _ = ApplyReaderStyleAsync();   // refresh the zoom label with the restored value
 
         // From here on, control changes are USER changes — persist them.
@@ -1244,6 +1250,7 @@ public sealed partial class MainWindow : Window
         // simply does nothing, and ApplyReaderStyleAsync is a no-op then too.)
         if (ReferenceEquals(combo, FontFamilyCombo)) _fontFamily = cssValue;
         else if (ReferenceEquals(combo, LineSpacingCombo)) _lineHeight = cssValue;
+        else if (ReferenceEquals(combo, MarginCombo)) _pageMargin = cssValue;
 
         // Persist the choice — but only for USER changes, never for the
         // parse-time/restore-time events (see _settingsRestored).
@@ -1251,6 +1258,7 @@ public sealed partial class MainWindow : Window
         {
             _settings.Current.ReaderFontFamily = _fontFamily;
             _settings.Current.ReaderLineHeight = _lineHeight;
+            _settings.Current.ReaderPageMargin = _pageMargin;
             _settings.Save();
         }
 
@@ -1309,14 +1317,20 @@ public sealed partial class MainWindow : Window
         //
         // Dual-page mode skips this frame: its viewport-height columns ARE
         // the page geometry there, and a max-width would fight them.
+        // Page side margins (LEFT = RIGHT, per the book-page metaphor), from
+        // the toolbar Margins ComboBox; "" = the built-in default. Because
+        // the page body is border-box sized with a capped width, a larger
+        // margin both widens the whitespace AND narrows the text column.
+        string sideMargin = _pageMargin.Length > 0 ? _pageMargin : "2.5";
+
         if (!_dualPage)
         {
             css.Append(
-                """
+                $$"""
                 body {
                     max-width: 40em !important;
                     margin: 0 auto !important;
-                    padding: 3em 2.5em 6em 2.5em !important;
+                    padding: 3em {{sideMargin}}em 6em {{sideMargin}}em !important;
                     box-sizing: border-box !important;
                 }
                 h1, h2, h3, h4, h5, h6, hgroup, header {
@@ -1353,7 +1367,7 @@ public sealed partial class MainWindow : Window
                     height: {{pageHeightVh}}vh !important;
                     margin: 0 !important;
                     box-sizing: border-box !important;
-                    padding: 2.5em 3em !important;
+                    padding: 2.5em {{sideMargin}}em !important;
                     column-count: 2;
                     column-gap: 5em;
                     column-fill: auto;
