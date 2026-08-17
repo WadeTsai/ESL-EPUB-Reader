@@ -269,7 +269,13 @@ public sealed partial class MainWindow : Window
     private async Task InitializeAsync()
     {
         await InitializeWebViewAsync();     // must be ready before a book opens
-        await ReopenLastBookAsync();        // "continue where you left off"
+
+        // A book the user explicitly launched us with (double-clicked .epub,
+        // file activation from the Store package) beats session restore.
+        if (App.StartupEpubPath is string startupBook && File.Exists(startupBook) && _webViewReady)
+            await OpenBookAsync(startupBook);
+        else
+            await ReopenLastBookAsync();    // "continue where you left off"
     }
 
     /// <summary>

@@ -33,23 +33,25 @@ strings:
 | `Package/Identity/Publisher` | `<Identity Publisher="CN=…">` |
 | `Package/Properties/PublisherDisplayName` | `<PublisherDisplayName>` |
 
-### 4. Build the Store upload package
+### 4. Build the Store upload packages
 
 ```powershell
-dotnet build src/EslEpubReader/EslEpubReader.csproj -c Release -p:Platform=x64 `
-  -p:BuildMsix=true -p:GenerateAppxPackageOnBuild=true `
-  -p:UapAppxPackageBuildMode=StoreUpload `
-  -p:AppxPackageDir="$PWD/store/packages/"
+powershell -File tools/build-store-package.ps1
 ```
 
-This produces `store/packages/…​.msixupload` — unsigned by design; the
-Store signs it with Microsoft's certificate during publication.
+One command builds BOTH architectures and produces
+`store/packages/EslEpubReader_<version>_x64.msixupload` and
+`…_ARM64.msixupload` — unsigned by design; the Store signs submissions
+with Microsoft's certificate during publication. (The script refuses to
+build while the manifest still contains PLACEHOLDER identity values, so
+step 3 can't be forgotten.)
 
 ### 5. Create the submission
 
 In Partner Center → your app → **Start your submission**:
 
-- **Packages**: upload the `.msixupload`.
+- **Packages**: upload BOTH `.msixupload` files (x64 and ARM64) into the
+  same submission.
 - **Store listing**: upload the three screenshots from
   `store/screenshots/` (they are exactly 1920×1080):
   - `1-lookup-1920x1080.png` — the triple dictionary lookup (hero shot)
