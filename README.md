@@ -1,4 +1,4 @@
-# ESL ePub Reader
+# ESL ePUB Reader
 
 A Windows desktop ePub reader designed for **ESL (English as a Second
 Language) readers**, built with **C# 14**, **.NET 10**, and **WinUI 3**
