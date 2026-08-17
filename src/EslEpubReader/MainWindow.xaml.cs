@@ -198,6 +198,17 @@ public sealed partial class MainWindow : Window
         ExtendsContentIntoTitleBar = true;
         SetTitleBar(AppTitleBar);
 
+        // Taskbar / Alt+Tab icon: the same open-book mark the in-app title
+        // bar shows (Segoe Fluent glyph E736, pre-rendered into app.ico by
+        // tools/make-icon.ps1). Without SetIcon, an UNPACKAGED WinUI 3
+        // window shows a generic icon in the taskbar even though the exe
+        // itself embeds one. File.Exists guards the single-file publish
+        // case, where loose content may sit elsewhere — the embedded exe
+        // icon still covers Explorer/pinned shortcuts there.
+        string iconPath = Path.Combine(AppContext.BaseDirectory, "Assets", "app.ico");
+        if (File.Exists(iconPath))
+            AppWindow.SetIcon(iconPath);
+
         // Restore the persisted session data (last book/chapter/position/
         // theme) BEFORE anything else can query it.
         _settings.Load();
