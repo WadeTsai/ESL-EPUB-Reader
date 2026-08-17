@@ -278,6 +278,85 @@ public sealed partial class MainWindow : Window
         _settings.Save();
     }
 
+    // ====================================================== panel visibility
+
+    /// <summary>Chapter-panel width to restore when it is unhidden (the
+    /// user may have dragged the splitter before hiding it).</summary>
+    private double _savedChapterWidth = 240;
+
+    /// <summary>Dictionary-panel width to restore when it is unhidden.</summary>
+    private double _savedDictWidth = 380;
+
+    /// <summary>Toolbar toggle: show/hide the CHAPTERS panel (left card).</summary>
+    private void ChapterPaneToggle_Toggled(object sender, RoutedEventArgs e)
+    {
+        // Fires once during XAML parse (IsChecked="True") before the named
+        // elements below exist — skip that call, the panel is visible anyway.
+        if (ChapterPane is null || ChapterColumn is null || ChapterSplitter is null) return;
+
+        SetPaneVisibility(
+            visible: ChapterPaneToggle.IsChecked == true,
+            pane: ChapterPane, splitter: ChapterSplitter, column: ChapterColumn,
+            restoredMinWidth: 140, savedWidth: ref _savedChapterWidth);
+    }
+
+    /// <summary>Toolbar toggle: show/hide the DICTIONARY panel (right card).</summary>
+    private void DictPaneToggle_Toggled(object sender, RoutedEventArgs e)
+    {
+        if (DictPane is null || DictColumn is null || DictSplitter is null) return;
+
+        SetPaneVisibility(
+            visible: DictPaneToggle.IsChecked == true,
+            pane: DictPane, splitter: DictSplitter, column: DictColumn,
+            restoredMinWidth: 240, savedWidth: ref _savedDictWidth);
+    }
+
+    /// <summary>
+    /// Show or hide one side panel. Hiding needs THREE coordinated changes,
+    /// because a Grid column is not an element:
+    ///
+    ///   1. collapse the card  — stops rendering + hit-testing its content;
+    ///   2. collapse the splitter — a drag handle for a hidden pane would be
+    ///      a confusing 10px dead zone;
+    ///   3. zero the COLUMN — and crucially also its MinWidth, because a
+    ///      Grid enforces MinWidth even on a zero-width column (the layout
+    ///      would keep a 140/240px hole without this).
+    ///
+    /// The current width is remembered on hide and restored on show, so a
+    /// pane comes back exactly as wide as the user had dragged it. The
+    /// star-sized reader column automatically absorbs/returns the space.
+    /// </summary>
+    /// <param name="visible">Target state: true = show, false = hide.</param>
+    /// <param name="pane">The card Border to collapse/restore.</param>
+    /// <param name="splitter">The pane's adjacent drag handle.</param>
+    /// <param name="column">The pane's ColumnDefinition.</param>
+    /// <param name="restoredMinWidth">The MinWidth the column gets back when
+    /// shown (matches the value declared in XAML).</param>
+    /// <param name="savedWidth">Storage slot for the width across hide/show.</param>
+    private static void SetPaneVisibility(
+        bool visible, FrameworkElement pane, FrameworkElement splitter,
+        ColumnDefinition column, double restoredMinWidth, ref double savedWidth)
+    {
+        if (visible)
+        {
+            column.MinWidth = restoredMinWidth;
+            column.Width = new GridLength(savedWidth);
+            pane.Visibility = Visibility.Visible;
+            splitter.Visibility = Visibility.Visible;
+        }
+        else
+        {
+            // Remember the width the user had (ActualWidth is 0 if we are
+            // somehow already collapsed — keep the previous value then).
+            if (column.ActualWidth > 0) savedWidth = column.ActualWidth;
+
+            column.MinWidth = 0;                  // MUST precede Width = 0
+            column.Width = new GridLength(0);
+            pane.Visibility = Visibility.Collapsed;
+            splitter.Visibility = Visibility.Collapsed;
+        }
+    }
+
     // ==================================================== translation language
 
     /// <summary>

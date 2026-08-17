@@ -89,6 +89,9 @@ doesn't know the phrase, each word is decoded individually.
 - **Resizable layout** — drag the gaps between the chapter list, the
   reading area, and the dictionary panel to adjust their widths (custom
   zero-dependency splitter control; each pane has sensible min/max limits).
+- **Collapsible side panels** — two toolbar toggles hide/unhide the chapter
+  list and the dictionary panel for distraction-free, full-width reading;
+  a re-shown panel comes back at exactly the width it had.
 - **Continue where you left off** — the app remembers the last opened book,
   chapter, and scroll position (saved to
   `%LOCALAPPDATA%\EslEpubReader\settings.json`) and restores all three
