@@ -69,8 +69,9 @@ doesn't know the phrase, each word is decoded individually.
   book's default.
 - **Line spacing control** (1.4× – 2.5×) for easier line tracking while
   decoding unfamiliar words.
-- **Page margin control** — extra-narrow / narrow / default / wide /
-  extra-wide side margins (left and right always equal, like a book page).
+- **Page margin control** — extra-narrow / narrow / default / medium /
+  wide / extra-wide side margins (left and right always equal, like a book
+  page).
   Each level also sets how wide the text may grow, and the column is fully
   **responsive**: hide the Chapters or Dictionary panel (or resize the
   window) and the text reflows into the freed space immediately —

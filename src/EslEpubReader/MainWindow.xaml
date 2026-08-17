@@ -160,6 +160,7 @@
                     <ComboBoxItem Content="Default margins" Tag=""/>
                     <ComboBoxItem Content="Extra-narrow margins" Tag="0.25|none"/>
                     <ComboBoxItem Content="Narrow margins" Tag="1|60"/>
+                    <ComboBoxItem Content="Medium margins" Tag="3|38"/>
                     <ComboBoxItem Content="Wide margins" Tag="5|36"/>
                     <ComboBoxItem Content="Extra-wide margins" Tag="8|32"/>
                 </ComboBox>
