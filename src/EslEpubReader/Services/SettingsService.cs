@@ -86,9 +86,11 @@ public sealed class ReaderSettings
     /// hand-edited to something silly.</summary>
     public double ReaderZoom { get; set; } = 1.0;
 
-    /// <summary>Page side margin in em — left and right are always equal
-    /// (a Tag value from the Margins ComboBox, e.g. "5"). "" = the built-in
-    /// default (2.5em).</summary>
+    /// <summary>Page margin level — a Tag value from the Margins ComboBox in
+    /// the form "margin|columnCap" (both em; e.g. "1|60", or "0.25|none" for
+    /// fill-the-pane). Left and right margins are always equal. "" = the
+    /// built-in defaults (2.5em margin, 40em column). Unknown values fall
+    /// back to the default selection at load time.</summary>
     public string ReaderPageMargin { get; set; } = "";
 }
 

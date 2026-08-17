@@ -145,19 +145,23 @@
                 </ComboBox>
 
                 <!-- Page side MARGINS (left and right are always kept equal,
-                     like a book page). The Tag is the per-side margin in em;
-                     empty Tag = the built-in default (2.5em). Because the
-                     page column is border-box sized, wider margins also
-                     narrow the text column — shorter lines, easier tracking.
-                     Applied in ApplyReaderStyleAsync; persisted like the
-                     other typography settings. -->
-                <ComboBox x:Name="MarginCombo" MinWidth="150" SelectedIndex="0"
+                     like a book page). The Tag encodes "margin|columnCap",
+                     both in em: the per-side margin, and the maximum text-
+                     column width that margin level allows ("none" = fill the
+                     whole pane). Narrower margins therefore mean WIDER text:
+                     the column is responsive and grows into space freed by
+                     hiding the Chapters/Dictionary panels or enlarging the
+                     window (see ApplyReaderStyleAsync). Empty Tag = the
+                     defaults (2.5em margin, 40em book measure). Persisted
+                     like the other typography settings. -->
+                <ComboBox x:Name="MarginCombo" MinWidth="170" SelectedIndex="0"
                           SelectionChanged="ReaderStyleCombo_SelectionChanged"
-                          ToolTipService.ToolTip="Page margins (left = right)">
+                          ToolTipService.ToolTip="Page margins (left = right); narrower margins allow wider text">
                     <ComboBoxItem Content="Default margins" Tag=""/>
-                    <ComboBoxItem Content="Narrow margins" Tag="1"/>
-                    <ComboBoxItem Content="Wide margins" Tag="5"/>
-                    <ComboBoxItem Content="Extra-wide margins" Tag="8"/>
+                    <ComboBoxItem Content="Extra-narrow margins" Tag="0.25|none"/>
+                    <ComboBoxItem Content="Narrow margins" Tag="1|60"/>
+                    <ComboBoxItem Content="Wide margins" Tag="5|36"/>
+                    <ComboBoxItem Content="Extra-wide margins" Tag="8|32"/>
                 </ComboBox>
 
                 <!-- Single-page / dual-page layout switch. OFF (default) =
@@ -211,6 +215,7 @@
                 <ToggleButton x:Name="ChapterPaneToggle" IsChecked="True"
                               Checked="ChapterPaneToggle_Toggled"
                               Unchecked="ChapterPaneToggle_Toggled"
+                              AutomationProperties.Name="Show or hide the chapter list"
                               ToolTipService.ToolTip="Show / hide the chapter list">
                     <FontIcon Glyph="&#xE90C;" FontSize="14"/>
                 </ToggleButton>
@@ -220,6 +225,7 @@
                 <ToggleButton x:Name="DictPaneToggle" IsChecked="True"
                               Checked="DictPaneToggle_Toggled"
                               Unchecked="DictPaneToggle_Toggled"
+                              AutomationProperties.Name="Show or hide the dictionary panel"
                               ToolTipService.ToolTip="Show / hide the dictionary panel">
                     <FontIcon Glyph="&#xE90D;" FontSize="14"/>
                 </ToggleButton>

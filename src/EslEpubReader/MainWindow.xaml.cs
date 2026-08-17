@@ -1318,17 +1318,36 @@ public sealed partial class MainWindow : Window
         // Dual-page mode skips this frame: its viewport-height columns ARE
         // the page geometry there, and a max-width would fight them.
         // Page side margins (LEFT = RIGHT, per the book-page metaphor), from
-        // the toolbar Margins ComboBox; "" = the built-in default. Because
-        // the page body is border-box sized with a capped width, a larger
-        // margin both widens the whitespace AND narrows the text column.
-        string sideMargin = _pageMargin.Length > 0 ? _pageMargin : "2.5";
+        // the toolbar Margins ComboBox. The Tag encodes "margin|columnCap":
+        // the per-side margin AND the widest text column that margin level
+        // allows ("none" = fill the pane). "" = defaults (2.5em / 40em).
+        string[] marginParts = _pageMargin.Split('|');
+        string sideMargin = marginParts[0].Length > 0 ? marginParts[0] : "2.5";
+        string columnCap = marginParts.Length > 1 ? marginParts[1] : "40";
+
+        // RESPONSIVE column width (RWD): the usable width is expressed in
+        // vw units so the column reflows INSTANTLY when the viewport grows —
+        // hiding the Chapters/Dictionary panels or widening the window lets
+        // the text expand up to the margin level's cap, instead of leaving
+        // dead whitespace around a fixed-width column.
+        //
+        // The ÷zoom is load-bearing: vw resolves against the real viewport
+        // and is then SCALED by the CSS zoom applied above, so 100vw inside
+        // a zoomed body would overflow the pane; dividing the zoom back out
+        // makes the value mean "the visible pane width" again (same trick
+        // as the dual-page column height).
+        string usableWidth =
+            $"calc({(100.0 / _zoom).ToString("0.####", System.Globalization.CultureInfo.InvariantCulture)}vw)";
+        string maxWidth = columnCap == "none"
+            ? usableWidth
+            : $"min({columnCap}em, {usableWidth})";
 
         if (!_dualPage)
         {
             css.Append(
                 $$"""
                 body {
-                    max-width: 40em !important;
+                    max-width: {{maxWidth}} !important;
                     margin: 0 auto !important;
                     padding: 3em {{sideMargin}}em 6em {{sideMargin}}em !important;
                     box-sizing: border-box !important;
