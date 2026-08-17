@@ -9,8 +9,8 @@
 //   * injects the JavaScript that watches for TEXT SELECTIONS,
 //   * receives selection messages and fires all THREE lookups in parallel:
 //       1. English–English dictionary        (online, dictionaryapi.dev)
-//       2. Google Dictionary (繁體中文)       (online, ranked word translations)
-//       3. Google Translate                  (online, whole-selection MT —
+//       2. Bing Dict                         (online, ranked word translations)
+//       3. Bing Translator                   (online, whole-selection MT —
 //                                             also handles full SENTENCES)
 //   * applies the reader's typography choices (text zoom, font family,
 //     line spacing) to every chapter via injected CSS.
@@ -27,8 +27,8 @@
 //        │  normalize text, cancel any older lookup
 //        ▼
 //   Task.WhenAll( EnglishDictionaryService.LookupAsync,   ┐ skipped for long
-//                 GoogleDictionaryService.LookupAsync,    ┘ sentence selections
-//                 GoogleTranslateService.TranslateAsync ) ── always runs
+//                 BingDictionaryService.LookupAsync,      ┘ sentence selections
+//                 BingTranslateService.TranslateAsync )   ── always runs
 //        │
 //        ▼
 //   side panel updated (definitions, pinyin, 繁體字, full translation)
@@ -74,7 +74,7 @@ public sealed partial class MainWindow : Window
     /// than this (a 6+ word selection is a sentence, not a phrase).</summary>
     private const int MaxDictionaryTermWords = 5;
 
-    /// <summary>Hard cap for Google Translate — selections longer than this
+    /// <summary>Hard cap for Bing Translator — selections longer than this
     /// (several paragraphs) are ignored entirely to avoid abusing the free
     /// endpoint and flooding the panel.</summary>
     private const int MaxTranslationLength = 500;
@@ -83,8 +83,8 @@ public sealed partial class MainWindow : Window
 
     private readonly EpubParserService _epubParser = new();
     private readonly EnglishDictionaryService _englishDict = new();
-    private readonly GoogleDictionaryService _googleDict = new();
-    private readonly GoogleTranslateService _translator = new();
+    private readonly BingDictionaryService _bingDict = new();
+    private readonly BingTranslateService _translator = new();
 
     /// <summary>Persists the reading session (last book / chapter / scroll
     /// position) across app launches — see Services/SettingsService.cs.</summary>
@@ -227,7 +227,7 @@ public sealed partial class MainWindow : Window
         // Populate the translation-language picker and restore the last
         // choice (default: Traditional Chinese). Setting SelectedItem fires
         // LanguageCombo_SelectionChanged, which pushes the code into both
-        // Google services and refreshes the section headers — so a single
+        // Bing services and refreshes the section headers — so a single
         // code path covers startup AND user changes.
         LanguageCombo.ItemsSource = LanguageCatalog.All;
         LanguageCombo.SelectedItem = LanguageCatalog.FromCode(_settings.Current.TargetLanguageCode);
@@ -415,7 +415,7 @@ public sealed partial class MainWindow : Window
     /// Translation-language picker (dictionary panel header). One handler
     /// serves both startup restore and user changes:
     ///
-    ///   1. push the language code into BOTH Google services (translation
+    ///   1. push the language code into BOTH Bing services (translation
     ///      and dictionary — they cache per-language, so switching back and
     ///      forth reuses earlier answers);
     ///   2. persist the choice so the next launch starts in this language;
@@ -429,15 +429,15 @@ public sealed partial class MainWindow : Window
         if (LanguageCombo.SelectedItem is not TranslationLanguage language) return;
 
         _translator.TargetLanguage = language.Code;
-        _googleDict.TargetLanguage = language.Code;
+        _bingDict.TargetLanguage = language.Code;
 
         _settings.Current.TargetLanguageCode = language.Code;
         _settings.Save();
 
         // Section headers show the native name ("繁體中文", "日本語", …) so
         // the reader instantly sees which language the results are in.
-        TranslateSectionHeader.Text = $"Google Translate ({language.ShortName})";
-        DictSectionHeader.Text = $"Google Dictionary ({language.ShortName})";
+        TranslateSectionHeader.Text = $"Bing Translator ({language.ShortName})";
+        DictSectionHeader.Text = $"Bing Dict ({language.ShortName})";
 
         if (_lastLookedUpTerm.Length > 0)
             _ = LookupAllSourcesAsync(_lastLookedUpTerm, speakAloud: false);
@@ -929,7 +929,7 @@ public sealed partial class MainWindow : Window
         text = text[start..(end + 1)];
 
         // Sanity limits: the generous MaxTranslationLength cap (whole
-        // sentences are allowed — Google Translate handles them), plus the
+        // sentences are allowed — Bing Translator handles them), plus the
         // text must contain at least one Latin letter (selecting an
         // illustration caption of digits shouldn't trigger a lookup).
         if (text.Length is 0 or > MaxTranslationLength) return "";
@@ -945,7 +945,7 @@ public sealed partial class MainWindow : Window
     /// same time and render whichever answers arrive:
     ///
     ///   * both dictionaries  — only for word/phrase-sized selections,
-    ///   * Google Translate   — always, including whole sentences.
+    ///   * Bing Translator   — always, including whole sentences.
     ///
     /// A newer selection cancels this one via _lookupCts, so results can
     /// never appear out of order.
@@ -987,7 +987,7 @@ public sealed partial class MainWindow : Window
         PhoneticText.Text = "";
         EnglishStatusText.Text = dictionarySized
             ? "Looking up…"
-            : "Selection is a sentence — see the Google Translate section above.";
+            : "Selection is a sentence — see the Bing Translator section above.";
         EnglishStatusText.Visibility = Visibility.Visible;
         ChineseStatusText.Text = dictionarySized ? "Looking up…" : "";
         ChineseStatusText.Visibility = dictionarySized ? Visibility.Visible : Visibility.Collapsed;
@@ -1004,7 +1004,7 @@ public sealed partial class MainWindow : Window
             Task<EnglishLookupResult>? englishTask =
                 dictionarySized ? _englishDict.LookupAsync(term, ct) : null;
             Task<ChineseLookupResult>? chineseTask =
-                dictionarySized ? _googleDict.LookupAsync(term, ct) : null;
+                dictionarySized ? _bingDict.LookupAsync(term, ct) : null;
             Task<TranslationResult> translateTask = _translator.TranslateAsync(term, ct);
 
             // WhenAll over the tasks that are actually running this time.
@@ -1038,7 +1038,7 @@ public sealed partial class MainWindow : Window
             result.StatusMessage.Length > 0 ? Visibility.Visible : Visibility.Collapsed;
     }
 
-    /// <summary>Paint the Google Dictionary (繁體中文) section of the panel.</summary>
+    /// <summary>Paint the Bing Dict section of the panel.</summary>
     private void RenderChineseResult(ChineseLookupResult result)
     {
         ChineseEntriesList.ItemsSource = result.Entries;
@@ -1047,7 +1047,7 @@ public sealed partial class MainWindow : Window
             result.StatusMessage.Length > 0 ? Visibility.Visible : Visibility.Collapsed;
     }
 
-    /// <summary>Paint the Google Translate section of the panel.</summary>
+    /// <summary>Paint the Bing Translator section of the panel.</summary>
     private void RenderTranslationResult(TranslationResult result)
     {
         TranslationText.Text = result.TranslatedText;

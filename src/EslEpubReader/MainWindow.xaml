@@ -299,6 +299,7 @@
                     <Grid.RowDefinitions>
                         <RowDefinition Height="Auto"/>   <!-- looked-up term header -->
                         <RowDefinition Height="*"/>      <!-- scrolling results -->
+                        <RowDefinition Height="Auto"/>   <!-- attribution footer -->
                     </Grid.RowDefinitions>
 
                     <!-- Header: the selected word/phrase + IPA pronunciation. -->
@@ -322,7 +323,7 @@
                                       MinWidth="170" MaxWidth="230" FontSize="12"
                                       DisplayMemberPath="DisplayName"
                                       SelectionChanged="LanguageCombo_SelectionChanged"
-                                      ToolTipService.ToolTip="Translation language (Google Translate &amp; Google Dictionary)"/>
+                                      ToolTipService.ToolTip="Translation language (Bing Translator &amp; Bing Dict)"/>
                         </Grid>
 
                         <!-- The looked-up term with a SPEAK button at its end:
@@ -362,16 +363,16 @@
                     <ScrollViewer Grid.Row="1" Padding="16,0,16,8">
                         <StackPanel Spacing="8">
 
-                            <!-- ▸ Google Translate section — shown FIRST: one
+                            <!-- ▸ Bing Translator section — shown FIRST: one
                                  fluent rendering of the whole selection (works
                                  for complete sentences too). The header text
                                  is updated from code with the chosen language:
-                                 "Google Translate (繁體中文)". -->
+                                 "Bing Translator (繁體中文)". -->
                             <StackPanel Orientation="Horizontal" Spacing="8" Margin="0,8,0,0">
                                 <Border Width="3" Height="14" CornerRadius="1.5"
                                         Background="{ThemeResource AccentFillColorDefaultBrush}"/>
                                 <TextBlock x:Name="TranslateSectionHeader"
-                                           Text="Google Translate (繁體中文)"
+                                           Text="Bing Translator (繁體中文)"
                                            Style="{ThemeResource BodyStrongTextBlockStyle}"/>
                             </StackPanel>
                             <TextBlock x:Name="TranslationStatusText" Text=""
@@ -421,8 +422,8 @@
                                 </ItemsControl.ItemTemplate>
                             </ItemsControl>
 
-                            <!-- ▸ Google Dictionary section: ranked translations
-                                 of the selected word in the chosen language,
+                            <!-- ▸ Bing Dict section: ranked translations of
+                                 the selected word in the chosen language,
                                  grouped by part of speech, with English
                                  back-translations for sense-checking. Header
                                  text updated from code with the language. -->
@@ -430,7 +431,7 @@
                                 <Border Width="3" Height="14" CornerRadius="1.5"
                                         Background="{ThemeResource AccentFillColorDefaultBrush}"/>
                                 <TextBlock x:Name="DictSectionHeader"
-                                           Text="Google Dictionary (繁體中文)"
+                                           Text="Bing Dict (繁體中文)"
                                            Style="{ThemeResource BodyStrongTextBlockStyle}"/>
                             </StackPanel>
                             <TextBlock x:Name="ChineseStatusText" Text=""
@@ -439,7 +440,7 @@
                                        Visibility="Collapsed"/>
                             <ItemsControl x:Name="ChineseEntriesList" Margin="0,0,0,12">
                                 <ItemsControl.ItemTemplate>
-                                    <DataTemplate x:DataType="models:GoogleDictionaryEntry">
+                                    <DataTemplate x:DataType="models:BingDictionaryEntry">
                                         <StackPanel Margin="0,0,0,10" Spacing="2">
                                             <!-- part-of-speech badge ("noun") — same
                                                  look as the English–English section -->
@@ -462,6 +463,15 @@
                             </ItemsControl>
                         </StackPanel>
                     </ScrollViewer>
+
+                    <!-- Attribution footer, pinned to the bottom of the
+                         dictionary card (outside the scroll area so it is
+                         always visible). -->
+                    <TextBlock Grid.Row="2"
+                               Text="Powered by Microsoft Bing and .NET 10.0"
+                               FontSize="11" HorizontalAlignment="Center"
+                               Padding="16,6,16,10"
+                               Foreground="{ThemeResource TextFillColorTertiaryBrush}"/>
                 </Grid>
             </Border>
         </Grid>

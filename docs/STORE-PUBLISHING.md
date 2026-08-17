@@ -75,12 +75,12 @@ In Partner Center → your app → **Start your submission**:
 
 - **Version bumps**: every new submission needs a higher
   `<Identity Version>` in the manifest (e.g. 1.1.0.0 → 1.2.0.0).
-- **Certification risk**: the translation/dictionary features use Google's
-  free public `gtx` endpoint (unofficial). Store certification does not
-  normally inspect this, but if the endpoint is ever blocked or rate-limited
-  the features degrade gracefully with in-app error messages. For a
-  long-term Store product, consider swapping in the official Google Cloud
-  Translation API (`GoogleTranslateService.cs` / `GoogleDictionaryService.cs`
+- **Certification risk**: the translation/dictionary features use the free
+  endpoints of Bing's own web translator (unofficial). Store certification
+  does not normally inspect this, but if the endpoints ever change or
+  rate-limit, the features degrade gracefully with in-app error messages.
+  For a long-term Store product, consider swapping in the official Azure
+  Translator API (`BingTranslateService.cs` / `BingDictionaryService.cs`
   are the drop-in points).
 - **x64 only vs. bundle**: the command above builds x64. To also cover
   Windows-on-ARM, run it again with `-p:Platform=ARM64` and upload both

@@ -9,10 +9,10 @@
 //        served online by the free https://dictionaryapi.dev API
 //        -> modelled by EnglishSense / EnglishLookupResult
 //
-//   2. English → Traditional Chinese (繁體中文)
-//        served online by Google Dictionary (the bilingual-dictionary data
-//        of the free Google Translate "gtx" endpoint, dt=bd)
-//        -> modelled by GoogleDictionaryEntry / ChineseLookupResult
+//   2. English → target language (default 繁體中文)
+//        served online by Bing Dict (the bilingual-dictionary data behind
+//        bing.com/translator's word cards, endpoint tlookupv3)
+//        -> modelled by BingDictionaryEntry / ChineseLookupResult
 //
 // Both results are displayed side by side in the dictionary side panel.
 // The XAML binds directly to the public properties of these classes, so all
@@ -78,25 +78,26 @@ public sealed class EnglishLookupResult
 }
 
 // ---------------------------------------------------------------------------
-// English → Traditional Chinese models (Google Dictionary)
+// English → target-language models (Bing Dict)
 // ---------------------------------------------------------------------------
 
 /// <summary>
-/// One Google Dictionary entry: a Traditional Chinese term that translates
-/// the looked-up English word, together with the part of speech it belongs
-/// to and the English words it maps back to. Entries arrive already ranked
-/// by Google's real-world usage frequency (most common translation first).
+/// One Bing Dict entry: a target-language term that translates the
+/// looked-up English word, together with the part of speech it belongs to
+/// and the English words it maps back to. Entries arrive already ranked by
+/// Bing's confidence score (most likely translation first).
 /// </summary>
-public sealed class GoogleDictionaryEntry
+public sealed class BingDictionaryEntry
 {
     /// <summary>Part of speech of the SOURCE word this translation belongs
     /// to — "noun", "verb", … Shown as a small badge, exactly like the
     /// English–English section does, so the two sections read alike.</summary>
     public required string PartOfSpeech { get; init; }
 
-    /// <summary>The translation in Traditional Chinese characters (繁體字) —
-    /// the endpoint is queried with tl=zh-TW, so Traditional script is what
-    /// comes back. Displayed large as the primary content.</summary>
+    /// <summary>The translation in the target language (Traditional Chinese
+    /// characters for the default zh-Hant — see BingDictionaryService for
+    /// how Traditional script is produced). Displayed large as the primary
+    /// content.</summary>
     public required string Term { get; init; }
 
     /// <summary>Comma-joined English back-translations of this Chinese term
@@ -109,26 +110,28 @@ public sealed class GoogleDictionaryEntry
     public bool HasBackTranslations => BackTranslations.Length > 0;
 }
 
-/// <summary>The complete English→Traditional-Chinese answer for one lookup.</summary>
+/// <summary>The complete English→target-language answer for one lookup.
+/// (Named for the app's original/default Chinese audience; it carries any
+/// target language.)</summary>
 public sealed class ChineseLookupResult
 {
     /// <summary>The exact word/phrase that was looked up.</summary>
     public required string Term { get; init; }
 
-    /// <summary>Matching entries, most frequently used translation first.</summary>
-    public required IReadOnlyList<GoogleDictionaryEntry> Entries { get; init; }
+    /// <summary>Matching entries, most confident translation first.</summary>
+    public required IReadOnlyList<BingDictionaryEntry> Entries { get; init; }
 
-    /// <summary>"" on success; otherwise e.g. "Google Dictionary is
-    /// unreachable." so the panel can tell the user what happened.</summary>
+    /// <summary>"" on success; otherwise e.g. "Bing Dict is unreachable."
+    /// so the panel can tell the user what happened.</summary>
     public string StatusMessage { get; init; } = "";
 }
 
 // ---------------------------------------------------------------------------
-// Machine translation model (Google Translate — the 3rd lookup source)
+// Machine translation model (Bing Translator — the 3rd lookup source)
 // ---------------------------------------------------------------------------
 
 /// <summary>
-/// Result of translating the selection with Google Translate. Unlike the
+/// Result of translating the selection with Bing Translator. Unlike the
 /// two dictionaries (which explain words/phrases), this is a single fluent
 /// rendering of the WHOLE selection — including full sentences.
 /// </summary>
@@ -137,7 +140,7 @@ public sealed class TranslationResult
     /// <summary>The exact text that was sent for translation.</summary>
     public required string Term { get; init; }
 
-    /// <summary>The Traditional Chinese translation ("" when unavailable).</summary>
+    /// <summary>The target-language translation ("" when unavailable).</summary>
     public string TranslatedText { get; init; } = "";
 
     /// <summary>"" on success; otherwise a human-readable explanation

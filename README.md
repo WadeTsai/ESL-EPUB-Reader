@@ -28,31 +28,34 @@ While reading, **select any word or phrase** (drag, double-click, or
 Shift+arrows). The selection is **read aloud** through the Windows built-in
 text-to-speech voice (toggleable from the toolbar), and the side panel
 immediately shows, top to bottom (the **translation language is selectable**
-from a picker in the panel header — every language Google Translate
+from a picker in the panel header — every language Microsoft Translator
 supports, ~130 of them; the default is Traditional Chinese and the last
 choice is remembered across launches):
 
-1. **Google 翻譯 – 繁體中文** (shown first) — a fluent machine translation
-   of the whole selection. Unlike the dictionaries this also works for
-   **complete sentences** (up to ~500 characters); for sentence-length
-   selections the dictionaries are skipped and only the translation is shown.
+1. **Bing Translator (繁體中文)** (shown first) — a fluent machine
+   translation of the whole selection. Unlike the dictionaries this also
+   works for **complete sentences** (up to ~500 characters); for
+   sentence-length selections the dictionaries are skipped and only the
+   translation is shown.
 2. **English – English** — definitions, part of speech, IPA pronunciation,
    example sentences, and synonyms (from the free
    [dictionaryapi.dev](https://dictionaryapi.dev) web API).
-3. **Google Dictionary (繁體中文)** — ranked Traditional Chinese
-   translations of the word, grouped by part of speech, each with English
-   back-translations for sense-checking. Served by the bilingual-dictionary
-   data (`dt=bd`) of the same Google endpoint as the translator, ordered by
-   Google's real-world usage frequency. No dictionary installation needed.
+3. **Bing Dict (繁體中文)** — ranked translations of the word, grouped by
+   part of speech, each with English back-translations for sense-checking.
+   Served by the bilingual-dictionary data behind bing.com/translator's
+   word cards (`tlookupv3`), ordered by Bing's confidence. For Traditional
+   Chinese the results are converted from Simplified using Windows' own
+   converter, since Bing's dictionary covers zh-Hans only. No dictionary
+   installation needed.
 
 Phrases are handled too: idioms are tried whole first; if the dictionary
 doesn't know the phrase, each word is decoded individually.
 
-> Note: the translation AND the Chinese dictionary use Google's free
-> unofficial `gtx` endpoint — fine for personal reading, but swap in the
-> official Cloud Translation API (`GoogleTranslateService.cs` /
-> `GoogleDictionaryService.cs` are the drop-in replacement points) for
-> anything production-scale.
+> Note: translation and the bilingual dictionary use the free endpoints of
+> Bing's own web translator (session tokens are negotiated automatically) —
+> fine for personal reading, but unofficial. For production-scale use swap
+> in the official Azure Translator API (`BingTranslateService.cs` /
+> `BingDictionaryService.cs` are the drop-in replacement points).
 
 ## Other features
 
@@ -130,9 +133,10 @@ needed.
 | `src/EslEpubReader/Models/` | ePub & dictionary data models |
 | `src/EslEpubReader/Services/EpubParserService.cs` | ZIP/OPF/TOC ePub parser |
 | `src/EslEpubReader/Services/EnglishDictionaryService.cs` | English–English lookups (dictionaryapi.dev) |
-| `src/EslEpubReader/Services/GoogleDictionaryService.cs` | Google Dictionary lookups (English→繁體中文, ranked by usage) |
-| `src/EslEpubReader/Services/GoogleTranslateService.cs` | Whole-selection translation to 繁體中文 (words → sentences) |
-| `src/EslEpubReader/Services/LanguageCatalog.cs` | All ~130 Google-supported target languages (codes + names) |
+| `src/EslEpubReader/Services/BingSession.cs` | Shared Bing web-translator session/token layer |
+| `src/EslEpubReader/Services/BingDictionaryService.cs` | Bing Dict lookups (English→target language, ranked) |
+| `src/EslEpubReader/Services/BingTranslateService.cs` | Whole-selection translation (words → sentences) |
+| `src/EslEpubReader/Services/LanguageCatalog.cs` | All ~130 Microsoft-Translator target languages (codes + names) |
 | `src/EslEpubReader/Services/SettingsService.cs` | Session persistence (book / chapter / position / theme / language) |
 | `src/EslEpubReader/Controls/ColumnSplitter.cs` | Draggable pane-resize handle (WinUI 3 has no built-in GridSplitter) |
 
@@ -146,7 +150,7 @@ user selects text in the chapter (WebView2)
   → normalize the term, cancel any stale in-flight lookup
   → Task.WhenAll( English lookup (online),        ← skipped for
                   Chinese lookup (offline index), ← sentence selections
-                  Google Translate (online) )     ← always runs
+                  Bing Translator (online) )      ← always runs
   → side panel renders all three results
 ```
 
@@ -155,5 +159,6 @@ Every source file carries detailed comments explaining each step further.
 ## Licenses of data sources
 
 - **dictionaryapi.dev**: free public API; queried at runtime.
-- **Google Translate / Google Dictionary**: queried at runtime via the free
-  unofficial `gtx` endpoint; nothing is redistributed in this repository.
+- **Bing Translator / Bing Dict**: queried at runtime via the free
+  endpoints of Bing's own web translator; nothing is redistributed in this
+  repository.

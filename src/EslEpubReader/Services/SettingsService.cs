@@ -60,8 +60,8 @@ public sealed class ReaderSettings
     /// readable and stable across SDK versions.</summary>
     public string Theme { get; set; } = "";
 
-    /// <summary>Target language for Google Translate + Google Dictionary,
-    /// as a Google language code ("zh-TW", "ja", "es", …). Chosen with the
+    /// <summary>Target language for Bing Translator + Bing Dict,
+    /// as a Microsoft Translator language code ("zh-Hant", "ja", "es", …). Chosen with the
     /// language picker in the dictionary panel and remembered across
     /// launches; unknown codes fall back to the default at load time
     /// (see LanguageCatalog.FromCode).</summary>
