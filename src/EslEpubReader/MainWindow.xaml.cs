@@ -1491,6 +1491,11 @@ public sealed partial class MainWindow : Window
                     overflow-x: auto !important;
                 }
                 body::-webkit-scrollbar { display: none; }
+                /* Inline-block paragraphs (e.g. Standard Ebooks bridgeheads)
+                   are ATOMIC and cannot fragment across column pages — one
+                   taller than a page overflows past the fold. Force block
+                   display so every paragraph splits cleanly. */
+                body p, body blockquote { display: block !important; max-width: 100% !important; }
                 img, svg { max-width: 100%; height: auto; }
                 """);
             css.Append('\n');
