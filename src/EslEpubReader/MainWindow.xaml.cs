@@ -751,29 +751,18 @@ public sealed partial class MainWindow : Window
                 }, 400);
             }, { capture: true, passive: true });
 
-            // ---------- 3. wheel = page flip in dual-page mode ----------
-            // With horizontal page columns, a vertical wheel gesture would
-            // otherwise do nothing. Translate wheel movement into horizontal
-            // scrolling so "wheel down = next page", which every reader
-            // tries instinctively. passive:false because preventDefault()
-            // must suppress the (useless) vertical scroll attempt.
-            window.addEventListener("wheel", (e) => {
-                const body = document.body;
-                if (body && body.scrollWidth > body.clientWidth + 1 && !e.ctrlKey) {
-                    body.scrollLeft += e.deltaY;
-                    e.preventDefault();
-                }
-            }, { passive: false });
-
-            // ---------- 4. keyboard paging in dual-page mode ----------
-            // PageDown/PageUp (plus Space, plain arrows, Home/End) normally
-            // scroll VERTICALLY — which dual-page mode locks, so the keys
-            // appeared dead. Map them to horizontal page flips instead.
+            // ---------- 3. dual-page paging primitives ----------
+            // Dual-page mode is STRICTLY PAGINATED: the view always shows
+            // two COMPLETE pages, and every navigation jumps whole page
+            // pairs. There is no free-form scrolling in this mode (the
+            // scrollbar is hidden by the injected CSS; the wheel is
+            // intercepted below), so a half-scrolled, half-column state is
+            // unreachable.
             //
-            // One "page" (a two-column pair) advances the scroll by the
-            // column period: content width (client width minus the body's
-            // own padding) plus one column gap — that is exactly where the
-            // next column pair starts in a CSS multicol overflow layout.
+            // One "page pair" advances the scroll by the column period:
+            // content width (client width minus the body's own padding)
+            // plus one column gap — that is exactly where the next column
+            // pair starts in a CSS multicol overflow layout.
             function dualPageStep() {
                 const cs = getComputedStyle(document.body);
                 return document.body.clientWidth
@@ -782,6 +771,46 @@ public sealed partial class MainWindow : Window
                      + (parseFloat(cs.columnGap)    || 0);
             }
 
+            // Show the NEXT (+1) or PREVIOUS (-1) page pair. The current
+            // position is snapped to the nearest pair boundary first (a
+            // safety net for any stray offset), so the result is always an
+            // exact pair start. The end clamp is safe too: maxScroll in a
+            // multicol layout is itself a whole-column boundary, so even
+            // the chapter's final view shows only complete columns.
+            function flipPage(direction) {
+                const body = document.body;
+                const step = dualPageStep();
+                const maxScroll = body.scrollWidth - body.clientWidth;
+                const target = Math.round(body.scrollLeft / step) * step + direction * step;
+                body.scrollLeft = Math.max(0, Math.min(target, maxScroll));
+            }
+
+            // Wheel = flip EXACTLY one page pair per gesture — "wheel down
+            // shows the next two pages", never a partial scroll. Small
+            // deltas accumulate so precision touchpads still flip; the
+            // cooldown swallows the inertia tail of a flick so one gesture
+            // means one page turn. passive:false because preventDefault()
+            // must suppress the default free-form scrolling.
+            let wheelAccumulator = 0;
+            let lastWheelFlip = 0;
+            window.addEventListener("wheel", (e) => {
+                const body = document.body;
+                if (!body || body.scrollWidth <= body.clientWidth + 1 || e.ctrlKey) return;
+                e.preventDefault();
+                const now = Date.now();
+                if (now - lastWheelFlip < 250) return;    // inertia guard
+                wheelAccumulator += e.deltaY;
+                if (Math.abs(wheelAccumulator) < 40) return;
+                flipPage(Math.sign(wheelAccumulator));
+                wheelAccumulator = 0;
+                lastWheelFlip = now;
+            }, { passive: false });
+
+            // ---------- 4. keyboard paging in dual-page mode ----------
+            // PageDown/PageUp (plus Space, plain arrows, Home/End) normally
+            // scroll VERTICALLY — which dual-page mode locks, so the keys
+            // appeared dead. Map them to whole page-pair flips instead:
+            // PgDn = show the NEXT two pages, PgUp = the previous two.
             window.addEventListener("keydown", (e) => {
                 const body = document.body;
                 // Single-page mode: leave every key to its default behavior.
@@ -795,19 +824,12 @@ public sealed partial class MainWindow : Window
 
                 let direction = 0;
                 if (e.key === "PageDown" || e.key === "ArrowRight" ||
-                    (e.key === " " && !e.shiftKey)) direction = 1;       // next page
+                    (e.key === " " && !e.shiftKey)) direction = 1;       // next pair
                 else if (e.key === "PageUp" || e.key === "ArrowLeft" ||
-                    (e.key === " " && e.shiftKey)) direction = -1;       // previous page
+                    (e.key === " " && e.shiftKey)) direction = -1;       // previous pair
                 if (direction === 0 || (e.shiftKey && e.key !== " ")) return;
 
-                // Snap to whole pages: round the CURRENT position to the
-                // nearest page first (the wheel scrolls continuously, so we
-                // may be mid-page), then step — a flip never shows half a
-                // column.
-                const step = dualPageStep();
-                const target = Math.round(body.scrollLeft / step) * step + direction * step;
-                body.scrollLeft = Math.max(0,
-                    Math.min(target, body.scrollWidth - body.clientWidth));
+                flipPage(direction);
                 e.preventDefault();
             }, { capture: true });
         })();
@@ -1373,8 +1395,10 @@ public sealed partial class MainWindow : Window
         //     applied above SCALES the laid-out box — dividing first makes
         //     the zoomed result exactly one viewport tall again;
         //   * a thin column-rule down the middle suggests the book's spine;
-        //   * the mouse wheel is translated to horizontal page movement by
-        //     the injected script (see SelectionWatcherScript part 3).
+        //   * navigation is STRICTLY PAGINATED — wheel and keys flip whole
+        //     page pairs via the injected script (SelectionWatcherScript
+        //     parts 3–4), and the scrollbar is hidden so there is no
+        //     free-form scrolling that could leave half pages on screen.
         if (_dualPage)
         {
             string pageHeightVh = (100.0 / _zoom).ToString("0.##", System.Globalization.CultureInfo.InvariantCulture);
@@ -1394,6 +1418,7 @@ public sealed partial class MainWindow : Window
                     overflow-y: hidden !important;
                     overflow-x: auto !important;
                 }
+                body::-webkit-scrollbar { display: none; }
                 img, svg { max-width: 100%; height: auto; }
                 """);
             css.Append('\n');

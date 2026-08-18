@@ -77,9 +77,10 @@ doesn't know the phrase, each word is decoded individually.
   window) and the text reflows into the freed space immediately —
   extra-narrow margins fill the whole pane.
 - **Single / dual-page view** — a toolbar toggle switches between one
-  continuous scrolling page and an open-book layout with two side-by-side
-  page columns; in dual-page mode the mouse wheel flips pages horizontally,
-  and the reading position is still tracked and restored.
+  continuous scrolling page and an open-book layout that always shows two
+  complete pages; in dual-page mode PgDn/PgUp, Space, arrows, and the
+  mouse wheel flip whole page pairs (never partial scrolling), and the
+  reading position is still tracked and restored.
 - **Read-aloud (text-to-speech)** — every looked-up selection is spoken by
   the Windows built-in speech engine (`Windows.Media.SpeechSynthesis`, fully
   offline). An installed English voice is picked automatically (en-US
