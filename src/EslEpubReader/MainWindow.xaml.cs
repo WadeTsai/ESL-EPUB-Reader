@@ -362,6 +362,8 @@ public sealed partial class MainWindow : Window
             visible: ChapterPaneToggle.IsChecked == true,
             pane: ChapterPane, splitter: ChapterSplitter, column: ChapterColumn,
             restoredMinWidth: 140, savedWidth: ref _savedChapterWidth);
+
+        ReturnFocusToReader();
     }
 
     /// <summary>Toolbar toggle: show/hide the DICTIONARY panel (right card).</summary>
@@ -373,7 +375,19 @@ public sealed partial class MainWindow : Window
             visible: DictPaneToggle.IsChecked == true,
             pane: DictPane, splitter: DictSplitter, column: DictColumn,
             restoredMinWidth: 240, savedWidth: ref _savedDictWidth);
+
+        ReturnFocusToReader();
     }
+
+    /// <summary>
+    /// Hand keyboard focus back to the reading page. Clicking any toolbar
+    /// control moves focus OUT of the WebView, which silently kills the
+    /// reading keys (PgDn/PgUp page flips run inside the web page) until
+    /// the user clicks the text again — so every control that changes the
+    /// reading layout calls this after doing its work.
+    /// </summary>
+    private void ReturnFocusToReader() =>
+        ReaderWebView?.Focus(FocusState.Programmatic);
 
     /// <summary>
     /// Show or hide one side panel. Hiding needs THREE coordinated changes,
@@ -738,6 +752,15 @@ public sealed partial class MainWindow : Window
                 return max > 0 ? Math.min(1, Math.max(0, window.scrollY / max)) : 0;
             }
 
+            // The last known dual-page reading position as a 0..1 fraction.
+            // Kept for the RESIZE handler below: when the viewport changes
+            // (hiding/showing the side panels, resizing the window), the
+            // multicol layout REFLOWS into different column geometry and the
+            // browser's preserved pixel scrollLeft becomes meaningless —
+            // this fraction is what lets us put the reader back on the same
+            // part of the chapter, aligned to a whole page pair.
+            let lastDualFraction = 0;
+
             // capture:true because in dual-page mode the scroll happens on
             // the BODY element, and element scroll events do NOT bubble —
             // capturing at the document level sees both modes' events.
@@ -746,8 +769,12 @@ public sealed partial class MainWindow : Window
                 // wheel tick — keeps the message channel quiet.
                 if (scrollTimer) clearTimeout(scrollTimer);
                 scrollTimer = setTimeout(() => {
+                    const fraction = currentScrollFraction();
+                    const body = document.body;
+                    if (body && body.scrollWidth > body.clientWidth + 1)
+                        lastDualFraction = fraction;
                     window.chrome.webview.postMessage(JSON.stringify(
-                        { type: "scroll", fraction: currentScrollFraction() }));
+                        { type: "scroll", fraction: fraction }));
                 }, 400);
             }, { capture: true, passive: true });
 
@@ -783,7 +810,43 @@ public sealed partial class MainWindow : Window
                 const maxScroll = body.scrollWidth - body.clientWidth;
                 const target = Math.round(body.scrollLeft / step) * step + direction * step;
                 body.scrollLeft = Math.max(0, Math.min(target, maxScroll));
+                // Record the position immediately (not just via the debounced
+                // scroll reporter) so a resize right after a flip restores
+                // the correct place.
+                lastDualFraction = maxScroll > 0 ? body.scrollLeft / maxScroll : 0;
             }
+
+            // ---------- viewport resize = re-align to a whole page pair ----
+            // Hiding/showing the Chapters or Dictionary panel (or resizing
+            // the window) REFLOWS the multicol layout: column widths and the
+            // page period change, and the browser keeps the OLD pixel
+            // scrollLeft — which now points into the middle of a column, so
+            // the view shows sliced pages and subsequent PgDn steps from a
+            // misaligned base. Fix: after the reflow settles, put the reader
+            // back at the remembered FRACTION of the chapter, snapped to the
+            // nearest whole page pair of the NEW geometry.
+            let resizeTimer = null;
+            window.addEventListener("resize", () => {
+                const body = document.body;
+                if (!body || body.scrollWidth <= body.clientWidth + 1) return;   // single-page: browser handles it
+                if (resizeTimer) clearTimeout(resizeTimer);
+                resizeTimer = setTimeout(() => {
+                    const step = dualPageStep();
+                    const maxScroll = body.scrollWidth - body.clientWidth;
+                    const target = Math.round((lastDualFraction * maxScroll) / step) * step;
+                    body.scrollLeft = Math.max(0, Math.min(target, maxScroll));
+
+                    // Force a full repaint: after a resize reflow the
+                    // renderer can leave STALE column-rule strokes from the
+                    // old geometry on screen (ghost vertical lines through
+                    // the text). Blink skips the visibility no-op unless the
+                    // layout is flushed in between — hence the offsetHeight
+                    // read.
+                    body.style.visibility = "hidden";
+                    void body.offsetHeight;
+                    body.style.visibility = "";
+                }, 150);   // debounced: splitter drags fire resize storms
+            });
 
             // Wheel = flip EXACTLY one page pair per gesture — "wheel down
             // shows the next two pages", never a partial scroll. Small
@@ -866,15 +929,23 @@ public sealed partial class MainWindow : Window
             _currentScrollFraction = fraction;
 
             // Mirror of currentScrollFraction() in the injected script:
-            // horizontal restore in dual-page mode, vertical otherwise.
+            // horizontal restore in dual-page mode (SNAPPED to a whole page
+            // pair — a raw fractional offset would show sliced columns),
+            // vertical otherwise.
             string js =
                 $$"""
                 (function () {
                     const f = {{fraction.ToString(System.Globalization.CultureInfo.InvariantCulture)}};
                     const body = document.body;
                     if (body && body.scrollWidth > body.clientWidth + 1) {
+                        const cs = getComputedStyle(body);
+                        const step = body.clientWidth
+                                   - (parseFloat(cs.paddingLeft)  || 0)
+                                   - (parseFloat(cs.paddingRight) || 0)
+                                   + (parseFloat(cs.columnGap)    || 0);
                         const max = body.scrollWidth - body.clientWidth;
-                        body.scrollLeft = max > 0 ? max * f : 0;
+                        const target = Math.round((f * max) / step) * step;
+                        body.scrollLeft = Math.max(0, Math.min(target, max));
                         return;
                     }
                     const maxScroll =
@@ -1253,6 +1324,7 @@ public sealed partial class MainWindow : Window
     {
         _dualPage = DualPageToggle.IsChecked == true;
         _ = ApplyReaderStyleAsync();
+        ReturnFocusToReader();   // keep PgDn/PgUp working right after the click
     }
 
     /// <summary>
